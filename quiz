@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Quiz Coupe du Monde</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f4f4f4;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+    .container {
+      background: #fff;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      width: 90%;
+      max-width: 600px;
+      transition: opacity 0.5s ease-in-out;
+    }
+    h1, h2 {
+      text-align: center;
+      color: #2e86de;
+    }
+    p {
+      font-size: 1em;
+      margin: 10px 0;
+      line-height: 1.6;
+    }
+    button {
+      background-color: #2e86de;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 1em;
+      cursor: pointer;
+      margin-top: 20px;
+      display: block;
+      width: 100%;
+    }
+    button:hover {
+      background-color: #1e5f9c;
+    }
+    .hidden {
+      display: none;
+    }
+    .question {
+      font-size: 1.2em;
+      margin-bottom: 20px;
+    }
+    .choices {
+      list-style: none;
+      padding: 0;
+    }
+    .choices li {
+      margin-bottom: 10px;
+    }
+    #timer {
+      font-size: 1.1em;
+      text-align: right;
+      color: #e74c3c;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container" id="intro">
+    <h1>Avant de commencer...</h1>
+    <p>Bienvenue dans ce quiz sur la Coupe du Monde de Football 🌍⚽</p>
+    <p>Petit rappel :</p>
+    <ul>
+      <li>La première Coupe du Monde a eu lieu en 1930</li>
+      <li>Le Brésil est l’équipe la plus titrée avec 5 victoires</li>
+      <li>Le dernier vainqueur est l’Argentine (2022)</li>
+      <li>Tu auras 15 secondes par question ⏱</li>
+    </ul>
+    <button onclick="startQuiz()">Commencer le quiz</button>
+  </div>
+
+  <div class="container hidden" id="quizBox">
+    <div id="timer">Temps restant : <span id="time">15</span>s</div>
+    <div class="question" id="question"></div>
+    <ul class="choices" id="choices"></ul>
+    <button id="nextBtn">Suivant</button>
+  </div>
+
+  <div class="container hidden" id="result">
+    <h2 id="scoreText">Score final : </h2>
+    <p id="message"></p>
+    <p id="previousScore"></p>
+    <button onclick="location.reload()">Rejouer</button>
+  </div>
+
+  <script>
+    const questions = [
+      {
+        question: "Quel pays a remporté la Coupe du Monde 2018 ?",
+        choices: ["Allemagne", "France", "Brésil", "Argentine"],
+        answer: "France"
+      },
+      {
+        question: "Combien de joueurs composent une équipe sur le terrain ?",
+        choices: ["9", "10", "11", "12"],
+        answer: "11"
+      },
+      {
+        question: "Quel joueur a marqué un triplé en finale de la Coupe du Monde 2022 ?",
+        choices: ["Lionel Messi", "Neymar", "Kylian Mbappé", "Cristiano Ronaldo"],
+        answer: "Kylian Mbappé"
+      },
+      {
+        question: "Quel pays a organisé la première Coupe du Monde en 1930 ?",
+        choices: ["Italie", "Uruguay", "Brésil", "Allemagne"],
+        answer: "Uruguay"
+      },
+      {
+        question: "Combien de Coupes du Monde a remportées le Brésil ?",
+        choices: ["3", "4", "5", "6"],
+        answer: "5"
+      },
+      {
+        question: "Quel pays a gagné la Coupe du Monde 2014 ?",
+        choices: ["Argentine", "Allemagne", "Espagne", "Pays-Bas"],
+        answer: "Allemagne"
+      },
+      {
+        question: "Qui est surnommé 'la Pulga' ?",
+        choices: ["Neymar", "Cristiano Ronaldo", "Lionel Messi", "Pelé"],
+        answer: "Lionel Messi"
+      },
+      {
+        question: "Dans quel pays s’est déroulée la Coupe du Monde 2022 ?",
+        choices: ["Russie", "Qatar", "États-Unis", "Espagne"],
+        answer: "Qatar"
+      },
+      {
+        question: "Quel trophée remporte le vainqueur de la Coupe du Monde ?",
+        choices: ["Ligue des Champions", "Ballon d’Or", "Trophée Jules Rimet", "Trophée UEFA"],
+        answer: "Trophée Jules Rimet"
+      },
+      {
+        question: "Combien de temps dure un match de football (hors prolongation) ?",
+        choices: ["80 minutes", "90 minutes", "100 minutes", "60 minutes"],
+        answer: "90 minutes"
+      }
+    ];
+
+    let currentQuestion = 0;
+    let score = 0;
+    let timer;
+    let timeLeft = 15;
+
+    const questionEl = document.getElementById('question');
+    const choicesEl = document.getElementById('choices');
+    const nextBtn = document.getElementById('nextBtn');
+    const quizBox = document.getElementById('quizBox');
+    const intro = document.getElementById('intro');
+    const result = document.getElementById('result');
+    const scoreText = document.getElementById('scoreText');
+    const message = document.getElementById('message');
+    const previousScore = document.getElementById('previousScore');
+    const timeDisplay = document.getElementById('time');
+
+    function startQuiz() {
+      intro.classList.add('hidden');
+      quizBox.classList.remove('hidden');
+      loadQuestion();
+    }
+
+    function loadQuestion() {
+      const q = questions[currentQuestion];
+      questionEl.textContent = q.question;
+      choicesEl.innerHTML = "";
+      q.choices.forEach(choice => {
+        const li = document.createElement("li");
+        const radio = document.createElement("input");
+        radio.type = "radio";
+        radio.name = "choice";
+        radio.value = choice;
+        li.appendChild(radio);
+        li.appendChild(document.createTextNode(" " + choice));
+        choicesEl.appendChild(li);
+      });
+
+      timeLeft = 15;
+      timeDisplay.textContent = timeLeft;
+      clearInterval(timer);
+      timer = setInterval(() => {
+        timeLeft--;
+        timeDisplay.textContent = timeLeft;
+        if (timeLeft === 0) {
+          clearInterval(timer);
+          nextQuestion();
+        }
+      }, 1000);
+    }
+
+    nextBtn.addEventListener("click", nextQuestion);
+
+    function nextQuestion() {
+      clearInterval(timer);
+      const selected = document.querySelector('input[name="choice"]:checked');
+      if (selected && selected.value === questions[currentQuestion].answer) {
+        score++;
+      }
+      // animation transition
+      quizBox.style.opacity = 0;
+      setTimeout(() => {
+        currentQuestion++;
+        if (currentQuestion < questions.length) {
+          loadQuestion();
+          quizBox.style.opacity = 1;
+        } else {
+          showResult();
+        }
+      }, 400);
+    }
+
+    function showResult() {
+      quizBox.classList.add('hidden');
+      result.classList.remove('hidden');
+      scoreText.textContent = `Ton score : ${score} / ${questions.length}`;
+      message.textContent = score >= 7 ? "🏆 Bravo, tu es un vrai fan de foot !" : "⚽ Pas mal, tu feras mieux la prochaine fois !";
+      // sauvegarder score
+      localStorage.setItem("dernierScore", score);
+      const previous = localStorage.getItem("dernierScore");
+      if (previous !== null) {
+        previousScore.textContent = `Ton dernier score enregistré : ${previous} / ${questions.length}`;
+      }
+    }
+  </script>
+
+</body>
+</html>
